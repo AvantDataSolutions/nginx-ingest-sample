@@ -1,0 +1,8 @@
+.vscode/*
+
+*.pyc
+
+data/
+
+.env
+docker-compose.override.yml

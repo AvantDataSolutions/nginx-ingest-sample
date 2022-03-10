@@ -1,0 +1,57 @@
+version: '3.5'
+
+services:
+  nginx:
+    image: nginx:1.21.6-alpine
+    restart: unless-stopped
+    ports:
+      - ${NGINX_HTTP_PORT}:7000
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx-index.html:/var/www/html/index.html:ro
+      - ./data/nginx/logs/:/var/log/nginx/
+
+  rsyslog:
+    build: rsyslog/
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./config/rsyslog.conf:/etc/rsyslog.conf:ro
+      - ./data/nginx/logs/:/var/log/nginx/:ro
+    depends_on:
+      - db
+
+  db:
+    image: timescale/timescaledb-ha:pg14.2-ts2.6.0-latest
+    restart: unless-stopped
+    command: postgres -c max_connections=200
+    healthcheck:
+      test: pg_isready
+      interval: 30s
+      timeout: 10s
+    stop_grace_period: 10m
+    stop_signal: SIGINT
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - ${PG_DB_PORT}:5432
+    volumes:
+      - ./data/pg_data:/home/postgres/pgdata/data
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  db-admin:
+    image: dpage/pgadmin4:6.5
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pg.local
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
+    volumes:
+      - ./data/pg_admin:/var/lib/pgadmin
+    ports:
+      - ${PG_ADMIN_PORT}:8080
