@@ -21,6 +21,7 @@ services:
     volumes:
       - ./config/rsyslog.conf:/etc/rsyslog.conf:ro
       - ./data/nginx/logs/:/var/log/nginx/:ro
+      - ./data/rsyslog:/state
     depends_on:
       - db
       - nginx
