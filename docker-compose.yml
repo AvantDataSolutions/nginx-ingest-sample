@@ -23,6 +23,7 @@ services:
       - ./data/nginx/logs/:/var/log/nginx/:ro
     depends_on:
       - db
+      - nginx
 
   db:
     image: timescale/timescaledb-ha:pg14.2-ts2.6.0-latest
